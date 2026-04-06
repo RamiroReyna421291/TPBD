@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaming App - Test</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background: #1a1a2e; color: #eee; padding: 20px; }
+        h1 { color: #e94560; margin-bottom: 20px; }
+        h2 { color: #0f3460; margin: 20px 0 10px; background: #e94560; padding: 8px; border-radius: 4px; }
+        .section { background: #16213e; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        input, select, button { padding: 10px; margin: 5px 0; border-radius: 4px; border: none; }
+        input, select { background: #0f3460; color: #eee; width: 200px; }
+        button { background: #e94560; color: white; cursor: pointer; width: 150px; }
+        button:hover { background: #c73e54; }
+        pre { background: #0f3460; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 200px; }
+        .row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .row input, .row select { flex: 1; min-width: 150px; }
+    </style>
+</head>
+<body>
+    <h1>🎬 Streaming App - Test Console</h1>
+
+    <div class="section">
+        <h2>1. Insertar Contenido</h2>
+        <div class="row">
+            <input type="text" id="titulo" placeholder="Título">
+            <select id="tipo">
+                <option value="pelicula">Película</option>
+                <option value="serie">Serie</option>
+            </select>
+            <input type="text" id="director" placeholder="Director">
+            <input type="number" id="anio" placeholder="Año">
+        </div>
+        <div class="row">
+            <input type="text" id="generos" placeholder="Géneros (separados por coma)">
+            <input type="text" id="calidad" placeholder="Calidad (ej: 4K)">
+        </div>
+        <button onclick="insertarContenido()">Insertar</button>
+        <pre id="result-insert"></pre>
+    </div>
+
+    <div class="section">
+        <h2>2. Buscar por Género</h2>
+        <input type="text" id="genero-buscar" placeholder="Género a buscar">
+        <button onclick="buscarPorGenero()">Buscar</button>
+        <pre id="result-genero"></pre>
+    </div>
+
+    <div class="section">
+        <h2>3. Incrementar Vistas</h2>
+        <input type="text" id="contenido-vistas" placeholder="ID del contenido">
+        <button onclick="incrementarVistas()">+1 Vista</button>
+        <pre id="result-vistas"></pre>
+    </div>
+
+    <div class="section">
+        <h2>4. Top 5 Rankings</h2>
+        <button onclick="obtenerTop5()">Ver Top 5</button>
+        <pre id="result-top5"></pre>
+    </div>
+
+    <div class="section">
+        <h2>5. Sesión de Usuario</h2>
+        <div class="row">
+            <input type="text" id="user-id" placeholder="ID de usuario">
+            <input type="text" id="contenido-sesion" placeholder="ID del contenido visto">
+        </div>
+        <button onclick="guardarSesion()">Guardar Sesión</button>
+        <button onclick="obtenerSesion()">Obtener Sesión</button>
+        <pre id="result-sesion"></pre>
+    </div>
+
+    <div class="section">
+        <h2>6. Actualizar Metadatos</h2>
+        <input type="text" id="contenido-metadatos" placeholder="ID del contenido">
+        <input type="text" id="nueva-calidad" placeholder="Nueva calidad (ej: 8K)">
+        <button onclick="actualizarMetadatos()">Actualizar</button>
+        <pre id="result-metadatos"></pre>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8080/api';
+
+        async function insertarContenido() {
+            const titulo = document.getElementById('titulo').value;
+            const tipo = document.getElementById('tipo').value;
+            const director = document.getElementById('director').value;
+            const anio = parseInt(document.getElementById('anio').value);
+            const generos = document.getElementById('generos').value.split(',').map(g => g.trim());
+            const calidad = document.getElementById('calidad').value;
+
+            const data = { titulo, tipo, director, anioEstreno: anio, generos, metadatos: { calidad, idiomas: ['Español'], subtitulos: ['Español'] } };
+
+            try {
+                const res = await fetch(`${API}/contenidos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const json = await res.json();
+                document.getElementById('result-insert').textContent = JSON.stringify(json, null, 2);
+                if (json.id) document.getElementById('contenido-vistas').value = json.id;
+                if (json.id) document.getElementById('contenido-metadatos').value = json.id;
+            } catch (e) {
+                document.getElementById('result-insert').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function buscarPorGenero() {
+            const genero = document.getElementById('genero-buscar').value;
+            try {
+                const res = await fetch(`${API}/contenidos/genero/${encodeURIComponent(genero)}`);
+                const json = await res.json();
+                document.getElementById('result-genero').textContent = JSON.stringify(json, null, 2);
+            } catch (e) {
+                document.getElementById('result-genero').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function incrementarVistas() {
+            const id = document.getElementById('contenido-vistas').value;
+            try {
+                await fetch(`${API}/vistas/${id}`, { method: 'POST' });
+                document.getElementById('result-vistas').textContent = `Vista incrementada para: ${id}`;
+            } catch (e) {
+                document.getElementById('result-vistas').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function obtenerTop5() {
+            try {
+                const res = await fetch(`${API}/ranking/top5`);
+                const json = await res.json();
+                document.getElementById('result-top5').textContent = JSON.stringify(json, null, 2);
+            } catch (e) {
+                document.getElementById('result-top5').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function guardarSesion() {
+            const userId = document.getElementById('user-id').value;
+            const contenidoId = document.getElementById('contenido-sesion').value;
+            try {
+                await fetch(`${API}/sesion/${userId}?contenidoId=${contenidoId}`, { method: 'POST' });
+                document.getElementById('result-sesion').textContent = `Sesión guardada para usuario: ${userId}`;
+            } catch (e) {
+                document.getElementById('result-sesion').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function obtenerSesion() {
+            const userId = document.getElementById('user-id').value;
+            try {
+                const res = await fetch(`${API}/sesion/${userId}`);
+                const json = await res.json();
+                document.getElementById('result-sesion').textContent = JSON.stringify(json, null, 2);
+            } catch (e) {
+                document.getElementById('result-sesion').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function actualizarMetadatos() {
+            const id = document.getElementById('contenido-metadatos').value;
+            const calidad = document.getElementById('nueva-calidad').value;
+            try {
+                await fetch(`${API}/contenidos/${id}/metadatos?calidad=${calidad}`, { method: 'PUT' });
+                document.getElementById('result-metadatos').textContent = `Metadatos actualizados para: ${id}`;
+            } catch (e) {
+                document.getElementById('result-metadatos').textContent = 'Error: ' + e.message;
+            }
+        }
+    </script>
+</body>
+</html>

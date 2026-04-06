@@ -1,0 +1,9 @@
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: streaming_db
+    redis:
+      host: localhost
+      port: 6379
