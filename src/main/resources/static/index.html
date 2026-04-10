@@ -80,8 +80,76 @@
         <pre id="result-metadatos"></pre>
     </div>
 
+    <div class="section">
+        <h2>7. Autenticación (MongoDB + Redis)</h2>
+        <div class="row">
+            <input type="text" id="reg-username" placeholder="Username">
+            <input type="password" id="reg-password" placeholder="Password">
+            <input type="email" id="reg-email" placeholder="Email">
+        </div>
+        <button onclick="registrar()">Registrar</button>
+        <div class="row" style="margin-top: 10px;">
+            <input type="text" id="login-username" placeholder="Username">
+            <input type="password" id="login-password" placeholder="Password">
+        </div>
+        <button onclick="login()">Login</button>
+        <button onclick="logout()">Logout</button>
+        <pre id="result-auth"></pre>
+    </div>
+
     <script>
         const API = 'http://localhost:8080/api';
+        const AUTH_API = 'http://localhost:8080/api/auth';
+
+        async function registrar() {
+            const username = document.getElementById('reg-username').value;
+            const password = document.getElementById('reg-password').value;
+            const email = document.getElementById('reg-email').value;
+            try {
+                const res = await fetch(`${AUTH_API}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, email })
+                });
+                const json = await res.json();
+                document.getElementById('result-auth').textContent = JSON.stringify(json, null, 2);
+                if (json.id) document.getElementById('user-id').value = json.id;
+            } catch (e) {
+                document.getElementById('result-auth').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                const res = await fetch(`${AUTH_API}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const json = await res.json();
+                document.getElementById('result-auth').textContent = JSON.stringify(json, null, 2);
+                if (json.id) {
+                    document.getElementById('user-id').value = json.id;
+                    alert('Login exitoso! Sesión creada en Redis.');
+                }
+            } catch (e) {
+                document.getElementById('result-auth').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function logout() {
+            const userId = document.getElementById('user-id').value;
+            try {
+                const res = await fetch(`${AUTH_API}/logout/${userId}`, { method: 'POST' });
+                const text = await res.text();
+                document.getElementById('result-auth').textContent = text;
+                alert('Sesión cerrada en Redis.');
+            } catch (e) {
+                document.getElementById('result-auth').textContent = 'Error: ' + e.message;
+            }
+        }
 
         async function insertarContenido() {
             const titulo = document.getElementById('titulo').value;
