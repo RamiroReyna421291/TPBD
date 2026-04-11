@@ -109,6 +109,51 @@ public class StreamingService {
     }
 
     /**
+     * Obtiene todos los contenidos del catálogo.
+     * 
+     * Equivalente SQL: SELECT * FROM contenidos
+     * 
+     * @return lista de todos los contenidos
+     */
+    public List<Contenido> obtenerTodosContenidos() {
+        return contenidoRepository.findAll();
+    }
+
+    /**
+     * Busca un contenido específico por su ID.
+     * 
+     * @param id ID único autogenerado por MongoDB
+     * @return Optional con el contenido si existe
+     */
+    public Optional<Contenido> obtenerContenidoPorId(String id) {
+        return contenidoRepository.findById(id);
+    }
+
+    /**
+     * Reemplaza el documento completo de un contenido.
+     * 
+     * IMPORTANTE: En MongoDB el método save() actúa como Upsert.
+     * Si el ID ya existe, pisa todo el documento con la nueva data.
+     * 
+     * @param id ID del contenido a actualizar
+     * @param contenido Datos nuevos del documento
+     * @return El contenido actualizado
+     */
+    public Contenido actualizarContenido(String id, Contenido contenido) {
+        contenido.setId(id);
+        return contenidoRepository.save(contenido);
+    }
+
+    /**
+     * Elimina un contenido físicamente de MongoDB.
+     * 
+     * @param id ID del contenido a eliminar
+     */
+    public void eliminarContenido(String id) {
+        contenidoRepository.deleteById(id);
+    }
+
+    /**
      * Busca contenidos por género.
      * 
      * MongoDB busca en el array "generos" elementos que contengan
@@ -315,5 +360,16 @@ public class StreamingService {
          * 4. Convertir los campos de vuelta a un objeto UserSession
          */
         return userSessionRepository.findByUserId(userId);
+    }
+
+    /**
+     * Elimina explícitamente la sesión de un usuario (Logout manual).
+     * 
+     * Comando Redis ejecutado: DEL user:session:{userId}
+     * 
+     * @param userId ID del usuario
+     */
+    public void eliminarSesion(String userId) {
+        userSessionRepository.delete(userId);
     }
 }

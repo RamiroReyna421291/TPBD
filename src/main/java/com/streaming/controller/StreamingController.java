@@ -26,6 +26,31 @@ public class StreamingController {
         return ResponseEntity.ok(saved);
     }
 
+    @GetMapping("/contenidos")
+    public ResponseEntity<List<Contenido>> obtenerTodos() {
+        return ResponseEntity.ok(streamingService.obtenerTodosContenidos());
+    }
+
+    @GetMapping("/contenidos/{id}")
+    public ResponseEntity<Contenido> obtenerPorId(@PathVariable String id) {
+        return streamingService.obtenerContenidoPorId(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/contenidos/{id}")
+    public ResponseEntity<Contenido> actualizarContenido(
+            @PathVariable String id,
+            @RequestBody Contenido contenido) {
+        return ResponseEntity.ok(streamingService.actualizarContenido(id, contenido));
+    }
+
+    @DeleteMapping("/contenidos/{id}")
+    public ResponseEntity<Void> eliminarContenido(@PathVariable String id) {
+        streamingService.eliminarContenido(id);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/contenidos/genero/{genero}")
     public ResponseEntity<List<Contenido>> buscarPorGenero(@PathVariable String genero) {
         List<Contenido> resultados = streamingService.buscarPorGenero(genero);
@@ -71,5 +96,11 @@ public class StreamingController {
         return streamingService.obtenerSesion(userId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/sesion/{userId}")
+    public ResponseEntity<Void> eliminarSesion(@PathVariable String userId) {
+        streamingService.eliminarSesion(userId);
+        return ResponseEntity.ok().build();
     }
 }
