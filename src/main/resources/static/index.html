@@ -3,174 +3,359 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Streaming App - Test</title>
+    <title>StreamFlix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { ember: "#e50914", ink: "#070b14", mist: "#94a3b8" }
+                }
+            }
+        };
+    </script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        body { background: #1a1a2e; color: #eee; padding: 20px; }
-        h1 { color: #e94560; margin-bottom: 20px; }
-        h2 { color: #0f3460; margin: 20px 0 10px; background: #e94560; padding: 8px; border-radius: 4px; }
-        .section { background: #16213e; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-        input, select, button { padding: 10px; margin: 5px 0; border-radius: 4px; border: none; }
-        input, select { background: #0f3460; color: #eee; width: 200px; }
-        button { background: #e94560; color: white; cursor: pointer; width: 150px; }
-        button:hover { background: #c73e54; }
-        pre { background: #0f3460; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 200px; }
-        .row { display: flex; gap: 10px; flex-wrap: wrap; }
-        .row input, .row select { flex: 1; min-width: 150px; }
+        body { background: radial-gradient(circle at top, rgba(229,9,20,.18), transparent 24%), linear-gradient(180deg, #070b14 0%, #0a1020 50%, #070b14 100%); }
+        .glass { background: rgba(15, 23, 42, .65); backdrop-filter: blur(14px); }
     </style>
 </head>
-<body>
-    <h1>🎬 Streaming App - Test Console</h1>
-
-    <div class="section">
-        <h2>1. Insertar Contenido</h2>
-        <div class="row">
-            <input type="text" id="titulo" placeholder="Título">
-            <select id="tipo">
-                <option value="pelicula">Película</option>
-                <option value="serie">Serie</option>
-            </select>
-            <input type="text" id="director" placeholder="Director">
-            <input type="number" id="anio" placeholder="Año">
+<body class="min-h-screen text-white">
+    <header class="sticky top-0 z-40 border-b border-white/10 bg-ink/80 backdrop-blur">
+        <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+            <div class="flex items-center gap-3">
+                <div class="rounded bg-ember px-3 py-1 text-lg font-black tracking-[.3em]">SF</div>
+                <div>
+                    <p class="text-xs uppercase tracking-[.3em] text-mist">Streaming App</p>
+                    <h1 class="text-lg font-semibold">StreamFlix</h1>
+                </div>
+            </div>
+            <label class="glass hidden w-full max-w-xl items-center gap-3 rounded-full border border-white/10 px-4 py-3 md:flex">
+                <input id="search" type="search" placeholder="Buscar por titulo, director o genero" class="w-full bg-transparent outline-none placeholder:text-mist">
+            </label>
+            <button id="seed-demo" class="rounded-full border border-white/15 px-4 py-2 text-sm hover:bg-white/5">Cargar demo</button>
         </div>
-        <div class="row">
-            <input type="text" id="generos" placeholder="Géneros (separados por coma)">
-            <input type="text" id="calidad" placeholder="Calidad (ej: 4K)">
+    </header>
+
+    <main class="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
+        <section class="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(229,9,20,.3),rgba(255,255,255,.03))]">
+            <div class="grid gap-6 px-6 py-10 lg:grid-cols-[1.35fr,.85fr] lg:px-10">
+                <div>
+                    <p class="inline-flex rounded-full border border-ember/30 bg-ember/15 px-3 py-1 text-xs uppercase tracking-[.25em] text-rose-100">Catalogo listo para crecer</p>
+                    <h2 class="mt-4 max-w-3xl text-4xl font-black leading-none sm:text-5xl">Frontend estilo streaming con fallback para los endpoints actuales.</h2>
+                    <p class="mt-5 max-w-2xl text-sm leading-7 text-slate-200 sm:text-base">
+                        El catálogo queda preparado para usar <code class="rounded bg-white/10 px-1">GET /api/contenidos</code> cuando exista.
+                        Mientras tanto trabaja con cache local, alta de contenidos y consultas por género.
+                    </p>
+                    <div class="mt-6 flex flex-wrap gap-3">
+                        <button id="refresh-catalog" class="rounded-full bg-ember px-5 py-3 text-sm font-semibold hover:bg-red-700">Actualizar catalogo</button>
+                        <button id="load-session" class="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold hover:bg-white/5">Ver mi sesion</button>
+                    </div>
+                </div>
+                <div class="glass rounded-[1.5rem] border border-white/10 p-5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm uppercase tracking-[.25em] text-mist">Estado</h3>
+                        <span id="mode-badge" class="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-200">Modo fallback</span>
+                    </div>
+                    <div class="mt-4 space-y-4 text-sm text-slate-200">
+                        <div class="rounded-2xl border border-white/10 bg-black/20 p-4">
+                            <p class="text-xs uppercase tracking-[.2em] text-mist">Fuente</p>
+                            <p id="catalog-source" class="mt-2 text-base font-semibold text-white">Cache local y backend por genero</p>
+                        </div>
+                        <div class="rounded-2xl border border-white/10 bg-black/20 p-4">
+                            <p class="text-xs uppercase tracking-[.2em] text-mist">Usuario</p>
+                            <input id="user-id" value="demo-user" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 outline-none">
+                        </div>
+                        <p id="status" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">Listo para trabajar con los endpoints actuales.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid gap-6 lg:grid-cols-[270px,1fr]">
+            <aside class="glass rounded-[1.5rem] border border-white/10 p-5">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm uppercase tracking-[.25em] text-mist">Filtros</h3>
+                    <button id="reset-filters" class="text-sm text-slate-300 hover:text-white">Limpiar</button>
+                </div>
+                <div class="mt-5 space-y-4">
+                    <input id="search-mobile" type="search" placeholder="Buscar" class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none placeholder:text-mist md:hidden">
+                    <select id="genre-filter" class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none">
+                        <option value="">Todos los generos</option>
+                    </select>
+                    <select id="type-filter" class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none">
+                        <option value="">Todos los tipos</option>
+                        <option value="pelicula">Pelicula</option>
+                        <option value="serie">Serie</option>
+                    </select>
+                    <input id="year-filter" type="number" placeholder="Anio minimo" class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none placeholder:text-mist">
+                    <button id="fetch-genre" class="w-full rounded-2xl bg-white/10 px-4 py-3 text-sm hover:bg-white/15">Consultar genero en backend</button>
+                </div>
+            </aside>
+
+            <div class="space-y-6">
+                <section class="glass rounded-[1.5rem] border border-white/10 p-5">
+                    <div class="mb-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs uppercase tracking-[.25em] text-mist">Top 5</p>
+                            <h3 class="text-2xl font-bold">Tendencias</h3>
+                        </div>
+                        <button id="refresh-ranking" class="rounded-full border border-white/15 px-4 py-2 text-sm hover:bg-white/5">Actualizar</button>
+                    </div>
+                    <div id="ranking" class="grid gap-4 md:grid-cols-2 xl:grid-cols-5"></div>
+                </section>
+
+                <section class="glass rounded-[1.5rem] border border-white/10 p-5">
+                    <div class="mb-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs uppercase tracking-[.25em] text-mist">Catalogo</p>
+                            <h3 class="text-2xl font-bold">Explorar</h3>
+                        </div>
+                        <span id="catalog-count" class="text-sm text-slate-300">0 titulos</span>
+                    </div>
+                    <div id="catalog" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3"></div>
+                </section>
+
+                <section class="grid gap-6 xl:grid-cols-[1fr,.95fr]">
+                    <div class="glass rounded-[1.5rem] border border-white/10 p-5">
+                        <p class="text-xs uppercase tracking-[.25em] text-mist">Sesion activa</p>
+                        <div id="session-card" class="mt-4 rounded-[1.25rem] border border-dashed border-white/10 bg-black/20 p-6 text-slate-300">
+                            Carga una sesion para ver el ultimo contenido guardado.
+                        </div>
+                    </div>
+
+                    <div class="glass rounded-[1.5rem] border border-white/10 p-5">
+                        <p class="text-xs uppercase tracking-[.25em] text-mist">Alta rapida</p>
+                        <h3 class="mt-2 text-2xl font-bold">Agregar contenido</h3>
+                        <form id="create-form" class="mt-5 space-y-4">
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <input name="titulo" placeholder="Titulo" class="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none" required>
+                                <select name="tipo" class="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none">
+                                    <option value="pelicula">Pelicula</option>
+                                    <option value="serie">Serie</option>
+                                </select>
+                                <input name="director" placeholder="Director" class="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none" required>
+                                <input name="anioEstreno" type="number" placeholder="Anio estreno" class="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none" required>
+                            </div>
+                            <input name="generos" placeholder="Generos separados por coma" class="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none" required>
+                            <div class="grid gap-4 md:grid-cols-3">
+                                <input name="calidad" placeholder="Calidad" class="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none">
+                                <input name="idiomas" placeholder="Idiomas separados por coma" class="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none">
+                                <input name="subtitulos" placeholder="Subtitulos separados por coma" class="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none">
+                            </div>
+                            <button class="w-full rounded-2xl bg-ember px-4 py-3 font-semibold hover:bg-red-700">Publicar contenido</button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+        <div class="w-full max-w-3xl rounded-[1.75rem] border border-white/10 bg-slate-950 p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p id="modal-kicker" class="text-xs uppercase tracking-[.25em] text-mist">Detalle</p>
+                    <h3 id="modal-title" class="mt-2 text-3xl font-black">Titulo</h3>
+                </div>
+                <button id="close-modal" class="rounded-full border border-white/10 px-3 py-2 text-sm hover:bg-white/5">Cerrar</button>
+            </div>
+            <div id="modal-body" class="mt-5 grid gap-6 md:grid-cols-[1.2fr,.8fr]"></div>
         </div>
-        <button onclick="insertarContenido()">Insertar</button>
-        <pre id="result-insert"></pre>
-    </div>
-
-    <div class="section">
-        <h2>2. Buscar por Género</h2>
-        <input type="text" id="genero-buscar" placeholder="Género a buscar">
-        <button onclick="buscarPorGenero()">Buscar</button>
-        <pre id="result-genero"></pre>
-    </div>
-
-    <div class="section">
-        <h2>3. Incrementar Vistas</h2>
-        <input type="text" id="contenido-vistas" placeholder="ID del contenido">
-        <button onclick="incrementarVistas()">+1 Vista</button>
-        <pre id="result-vistas"></pre>
-    </div>
-
-    <div class="section">
-        <h2>4. Top 5 Rankings</h2>
-        <button onclick="obtenerTop5()">Ver Top 5</button>
-        <pre id="result-top5"></pre>
-    </div>
-
-    <div class="section">
-        <h2>5. Sesión de Usuario</h2>
-        <div class="row">
-            <input type="text" id="user-id" placeholder="ID de usuario">
-            <input type="text" id="contenido-sesion" placeholder="ID del contenido visto">
-        </div>
-        <button onclick="guardarSesion()">Guardar Sesión</button>
-        <button onclick="obtenerSesion()">Obtener Sesión</button>
-        <pre id="result-sesion"></pre>
-    </div>
-
-    <div class="section">
-        <h2>6. Actualizar Metadatos</h2>
-        <input type="text" id="contenido-metadatos" placeholder="ID del contenido">
-        <input type="text" id="nueva-calidad" placeholder="Nueva calidad (ej: 8K)">
-        <button onclick="actualizarMetadatos()">Actualizar</button>
-        <pre id="result-metadatos"></pre>
     </div>
 
     <script>
-        const API = 'http://localhost:8080/api';
+        const API = `${window.location.origin}/api`;
+        const CATALOG_KEY = "streamflix.catalog.cache";
+        const USER_KEY = "streamflix.user";
+        const state = { catalog: [], ranking: [], session: null, hasCatalogEndpoint: false, filters: { search: "", genre: "", type: "", year: "" } };
+        const demo = [
+            { titulo: "Horizonte de Titanio", tipo: "pelicula", generos: ["Ciencia Ficcion", "Accion"], director: "Lucia Ferreyra", anioEstreno: 2024, metadatos: { calidad: "4K", idiomas: ["Español", "Ingles"], subtitulos: ["Español"] } },
+            { titulo: "Distrito Aurora", tipo: "serie", generos: ["Thriller", "Drama"], director: "Martin Quiroga", anioEstreno: 2023, metadatos: { calidad: "1080p", idiomas: ["Español"], subtitulos: ["Español", "Portugues"] } },
+            { titulo: "Atlas del Silencio", tipo: "pelicula", generos: ["Drama", "Suspenso"], director: "Valentina Costa", anioEstreno: 2022, metadatos: { calidad: "4K", idiomas: ["Español"], subtitulos: ["Español", "Ingles"] } }
+        ];
 
-        async function insertarContenido() {
-            const titulo = document.getElementById('titulo').value;
-            const tipo = document.getElementById('tipo').value;
-            const director = document.getElementById('director').value;
-            const anio = parseInt(document.getElementById('anio').value);
-            const generos = document.getElementById('generos').value.split(',').map(g => g.trim());
-            const calidad = document.getElementById('calidad').value;
+        const $ = (id) => document.getElementById(id);
+        const normalize = (value) => (value || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const getCache = () => { try { return JSON.parse(localStorage.getItem(CATALOG_KEY) || "[]"); } catch { return []; } };
+        const setCache = (data) => localStorage.setItem(CATALOG_KEY, JSON.stringify(data));
+        const setStatus = (text) => $("status").textContent = text;
+        const mergeCatalog = (...lists) => Array.from(new Map(lists.flat().map((item, i) => [(item.id || `${normalize(item.titulo)}-${item.anioEstreno || i}`), item])).values());
 
-            const data = { titulo, tipo, director, anioEstreno: anio, generos, metadatos: { calidad, idiomas: ['Español'], subtitulos: ['Español'] } };
-
-            try {
-                const res = await fetch(`${API}/contenidos`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const json = await res.json();
-                document.getElementById('result-insert').textContent = JSON.stringify(json, null, 2);
-                if (json.id) document.getElementById('contenido-vistas').value = json.id;
-                if (json.id) document.getElementById('contenido-metadatos').value = json.id;
-            } catch (e) {
-                document.getElementById('result-insert').textContent = 'Error: ' + e.message;
-            }
+        async function request(path, options = {}) {
+            const res = await fetch(`${API}${path}`, options);
+            if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
+            return (res.headers.get("content-type") || "").includes("application/json") ? res.json() : null;
         }
 
-        async function buscarPorGenero() {
-            const genero = document.getElementById('genero-buscar').value;
-            try {
-                const res = await fetch(`${API}/contenidos/genero/${encodeURIComponent(genero)}`);
-                const json = await res.json();
-                document.getElementById('result-genero').textContent = JSON.stringify(json, null, 2);
-            } catch (e) {
-                document.getElementById('result-genero').textContent = 'Error: ' + e.message;
-            }
+        const api = {
+            fetchCatalog: async () => { try { const data = await request("/contenidos"); state.hasCatalogEndpoint = true; return data; } catch { state.hasCatalogEndpoint = false; return null; } },
+            fetchGenre: (genre) => request(`/contenidos/genero/${encodeURIComponent(genre)}`),
+            create: (body) => request("/contenidos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+            ranking: () => request("/ranking/top5"),
+            view: (id) => request(`/vistas/${encodeURIComponent(id)}`, { method: "POST" }),
+            saveSession: (userId, contentId) => request(`/sesion/${encodeURIComponent(userId)}?contenidoId=${encodeURIComponent(contentId)}`, { method: "POST" }),
+            getSession: (userId) => request(`/sesion/${encodeURIComponent(userId)}`)
+        };
+
+        function renderFilters() {
+            const genres = [...new Set(state.catalog.flatMap((item) => item.generos || []))].sort((a, b) => a.localeCompare(b));
+            $("genre-filter").innerHTML = '<option value="">Todos los generos</option>' + genres.map((genre) => `<option value="${genre}">${genre}</option>`).join("");
+            $("genre-filter").value = state.filters.genre;
         }
 
-        async function incrementarVistas() {
-            const id = document.getElementById('contenido-vistas').value;
-            try {
-                await fetch(`${API}/vistas/${id}`, { method: 'POST' });
-                document.getElementById('result-vistas').textContent = `Vista incrementada para: ${id}`;
-            } catch (e) {
-                document.getElementById('result-vistas').textContent = 'Error: ' + e.message;
-            }
+        function filteredCatalog() {
+            return state.catalog.filter((item) => {
+                const haystack = normalize([item.titulo, item.director, ...(item.generos || [])].join(" "));
+                return (!state.filters.search || haystack.includes(normalize(state.filters.search)))
+                    && (!state.filters.genre || (item.generos || []).some((g) => normalize(g) === normalize(state.filters.genre)))
+                    && (!state.filters.type || normalize(item.tipo) === normalize(state.filters.type))
+                    && (!state.filters.year || Number(item.anioEstreno || 0) >= Number(state.filters.year));
+            });
         }
 
-        async function obtenerTop5() {
-            try {
-                const res = await fetch(`${API}/ranking/top5`);
-                const json = await res.json();
-                document.getElementById('result-top5').textContent = JSON.stringify(json, null, 2);
-            } catch (e) {
-                document.getElementById('result-top5').textContent = 'Error: ' + e.message;
-            }
+        function cardGradient(index) {
+            return ["from-rose-950 via-rose-800 to-amber-500", "from-sky-950 via-cyan-700 to-teal-400", "from-fuchsia-950 via-violet-700 to-indigo-400", "from-zinc-900 via-slate-700 to-orange-300"][index % 4];
         }
 
-        async function guardarSesion() {
-            const userId = document.getElementById('user-id').value;
-            const contenidoId = document.getElementById('contenido-sesion').value;
-            try {
-                await fetch(`${API}/sesion/${userId}?contenidoId=${contenidoId}`, { method: 'POST' });
-                document.getElementById('result-sesion').textContent = `Sesión guardada para usuario: ${userId}`;
-            } catch (e) {
-                document.getElementById('result-sesion').textContent = 'Error: ' + e.message;
-            }
+        function renderCatalog() {
+            const items = filteredCatalog();
+            $("catalog-count").textContent = `${items.length} titulos`;
+            $("catalog").innerHTML = items.length ? items.map((item, index) => `
+                <article class="overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/20">
+                    <div class="h-72 bg-gradient-to-br ${cardGradient(index)} p-5">
+                        <div class="flex h-full flex-col justify-between">
+                            <div class="flex justify-between gap-3">
+                                <span class="rounded-full border border-white/15 bg-black/25 px-3 py-1 text-xs uppercase">${item.tipo || "contenido"}</span>
+                                <span class="rounded-full bg-white/10 px-3 py-1 text-xs">${item.metadatos?.calidad || "SD"}</span>
+                            </div>
+                            <div>
+                                <div class="mb-3 flex flex-wrap gap-2">${(item.generos || []).slice(0, 3).map((g) => `<span class="rounded-full bg-white/10 px-2 py-1 text-[11px]">${g}</span>`).join("")}</div>
+                                <h4 class="text-2xl font-black leading-tight">${item.titulo || "Sin titulo"}</h4>
+                                <p class="mt-2 text-sm text-slate-200">${item.director || "Director sin definir"} • ${item.anioEstreno || "Año desconocido"}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 p-4">
+                        <button data-action="detail" data-id="${item.id || ""}" data-title="${item.titulo || ""}" class="rounded-full border border-white/10 px-4 py-2 text-sm hover:bg-white/5">Ver detalle</button>
+                        <button data-action="play" data-id="${item.id || ""}" data-title="${item.titulo || ""}" class="rounded-full bg-ember px-4 py-2 text-sm font-semibold hover:bg-red-700">Ver ahora</button>
+                    </div>
+                </article>`).join("") : `<div class="col-span-full rounded-[1.25rem] border border-dashed border-white/10 bg-black/20 p-8 text-center text-slate-300">No hay titulos para esos filtros.</div>`;
         }
 
-        async function obtenerSesion() {
-            const userId = document.getElementById('user-id').value;
-            try {
-                const res = await fetch(`${API}/sesion/${userId}`);
-                const json = await res.json();
-                document.getElementById('result-sesion').textContent = JSON.stringify(json, null, 2);
-            } catch (e) {
-                document.getElementById('result-sesion').textContent = 'Error: ' + e.message;
-            }
+        function renderRanking() {
+            $("ranking").innerHTML = state.ranking.length ? state.ranking.map((item, index) => {
+                const content = state.catalog.find((entry) => entry.id === item.contenidoId);
+                return `<article class="overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/20">
+                    <div class="bg-gradient-to-br ${cardGradient(index)} p-4">
+                        <p class="text-xs uppercase tracking-[.2em] text-white/70">Puesto ${index + 1}</p>
+                        <h4 class="mt-4 text-xl font-black">${content?.titulo || item.contenidoId}</h4>
+                        <p class="mt-2 text-sm text-white/85">${content?.director || "Sin detalle en cache"}</p>
+                    </div>
+                    <div class="flex items-center justify-between p-4 text-sm"><span class="text-slate-300">Vistas</span><span class="font-semibold">${Math.round(item.vistas || 0)}</span></div>
+                </article>`;
+            }).join("") : `<div class="md:col-span-2 xl:col-span-5 rounded-[1.25rem] border border-dashed border-white/10 bg-black/20 p-6 text-center text-slate-300">El ranking todavia no tiene datos.</div>`;
         }
 
-        async function actualizarMetadatos() {
-            const id = document.getElementById('contenido-metadatos').value;
-            const calidad = document.getElementById('nueva-calidad').value;
-            try {
-                await fetch(`${API}/contenidos/${id}/metadatos?calidad=${calidad}`, { method: 'PUT' });
-                document.getElementById('result-metadatos').textContent = `Metadatos actualizados para: ${id}`;
-            } catch (e) {
-                document.getElementById('result-metadatos').textContent = 'Error: ' + e.message;
-            }
+        function renderSession() {
+            if (!state.session) { $("session-card").textContent = "Carga una sesion para ver el ultimo contenido guardado."; return; }
+            const content = state.catalog.find((item) => item.id === state.session.lastContentId);
+            const when = state.session.timestamp ? new Date(state.session.timestamp * 1000).toLocaleString("es-AR") : "Sin timestamp";
+            $("session-card").innerHTML = `<p class="text-xs uppercase tracking-[.2em] text-mist">Usuario</p><p class="mt-2 text-xl font-bold text-white">${state.session.userId}</p><div class="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4"><p class="text-xs uppercase tracking-[.2em] text-mist">Ultimo contenido</p><p class="mt-2 text-lg font-semibold text-white">${content?.titulo || state.session.lastContentId}</p><p class="mt-1 text-sm text-slate-300">${content?.director || "ID sin detalle en cache local"}</p></div><p class="mt-4 text-sm text-slate-300">Ultima actividad: ${when}</p>`;
         }
+
+        function openModal(item) {
+            $("modal-kicker").textContent = `${item.tipo || "contenido"} • ${item.anioEstreno || "Año desconocido"}`;
+            $("modal-title").textContent = item.titulo || "Sin titulo";
+            $("modal-body").innerHTML = `<div class="space-y-4"><div class="rounded-[1.25rem] bg-gradient-to-br ${cardGradient(0)} p-6"><p class="text-sm text-white/80">Dirigida por</p><p class="mt-2 text-2xl font-black">${item.director || "Director sin definir"}</p></div><div><p class="text-xs uppercase tracking-[.2em] text-mist">Generos</p><div class="mt-3 flex flex-wrap gap-2">${(item.generos || []).map((g) => `<span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm">${g}</span>`).join("") || "<span class='text-slate-400'>Sin generos</span>"}</div></div></div><div class="space-y-4"><div class="rounded-[1.25rem] border border-white/10 bg-white/5 p-5 text-sm"><p>Calidad: <span class="font-semibold text-white">${item.metadatos?.calidad || "No definida"}</span></p><p class="mt-2">Idiomas: <span class="font-semibold text-white">${(item.metadatos?.idiomas || []).join(", ") || "No definidos"}</span></p><p class="mt-2">Subtitulos: <span class="font-semibold text-white">${(item.metadatos?.subtitulos || []).join(", ") || "No definidos"}</span></p></div><div class="flex flex-wrap gap-3"><button data-modal-play="${item.id || ""}" class="rounded-full bg-ember px-4 py-3 text-sm font-semibold hover:bg-red-700">Registrar vista</button><button data-modal-session="${item.id || ""}" class="rounded-full border border-white/10 px-4 py-3 text-sm hover:bg-white/5">Guardar en sesion</button></div></div>`;
+            $("modal").classList.remove("hidden");
+            $("modal").classList.add("flex");
+        }
+
+        function closeModal() { $("modal").classList.add("hidden"); $("modal").classList.remove("flex"); }
+
+        async function refreshCatalog() {
+            setStatus("Actualizando catalogo...");
+            const full = await api.fetchCatalog();
+            state.catalog = mergeCatalog(getCache(), full || []);
+            setCache(state.catalog);
+            $("mode-badge").textContent = state.hasCatalogEndpoint ? "GET /contenidos activo" : "Modo fallback";
+            $("catalog-source").textContent = state.hasCatalogEndpoint ? "Backend completo" : "Cache local y backend por genero";
+            setStatus(state.hasCatalogEndpoint ? "Catalogo cargado desde GET /api/contenidos." : "GET /api/contenidos aun no existe. Usando fallback.");
+            renderFilters(); renderCatalog(); renderRanking(); renderSession();
+        }
+
+        async function refreshRanking() { try { state.ranking = await api.ranking(); renderRanking(); setStatus("Ranking actualizado."); } catch (e) { setStatus(`No se pudo actualizar el ranking: ${e.message}`); } }
+        async function fetchGenre() { const genre = state.filters.genre || $("genre-filter").value; if (!genre) return setStatus("Selecciona un genero."); try { const data = await api.fetchGenre(genre); state.catalog = mergeCatalog(state.catalog, data); setCache(state.catalog); renderFilters(); renderCatalog(); setStatus(`Se cargaron ${data.length} titulos para ${genre}.`); } catch (e) { setStatus(`No se pudo consultar el genero: ${e.message}`); } }
+        async function loadSession() { const userId = $("user-id").value.trim(); if (!userId) return setStatus("Ingresa un usuario."); try { state.session = await api.getSession(userId); localStorage.setItem(USER_KEY, userId); renderSession(); setStatus(`Sesion cargada para ${userId}.`); } catch { state.session = null; renderSession(); setStatus(`No existe sesion activa para ${userId}.`); } }
+        async function registerView(id, title = "contenido") { if (!id) return setStatus(`"${title}" aun no tiene ID persistido.`); try { await api.view(id); await refreshRanking(); setStatus(`Vista registrada para ${title}.`); } catch (e) { setStatus(`No se pudo registrar la vista: ${e.message}`); } }
+        async function saveSession(id, title = "contenido") { const userId = $("user-id").value.trim(); if (!userId) return setStatus("Ingresa un usuario."); if (!id) return setStatus(`"${title}" aun no tiene ID persistido.`); try { await api.saveSession(userId, id); state.session = { userId, lastContentId: id, timestamp: Math.floor(Date.now() / 1000) }; localStorage.setItem(USER_KEY, userId); renderSession(); setStatus(`Sesion guardada para ${userId}.`); } catch (e) { setStatus(`No se pudo guardar la sesion: ${e.message}`); } }
+
+        async function createContent(event) {
+            event.preventDefault();
+            const data = new FormData($("create-form"));
+            const payload = {
+                titulo: String(data.get("titulo") || "").trim(),
+                tipo: String(data.get("tipo") || "").trim(),
+                director: String(data.get("director") || "").trim(),
+                anioEstreno: Number(data.get("anioEstreno")),
+                generos: String(data.get("generos") || "").split(",").map((v) => v.trim()).filter(Boolean),
+                metadatos: {
+                    calidad: String(data.get("calidad") || "").trim(),
+                    idiomas: String(data.get("idiomas") || "").split(",").map((v) => v.trim()).filter(Boolean),
+                    subtitulos: String(data.get("subtitulos") || "").split(",").map((v) => v.trim()).filter(Boolean)
+                }
+            };
+            try { const created = await api.create(payload); state.catalog = mergeCatalog(state.catalog, [created]); setCache(state.catalog); $("create-form").reset(); renderFilters(); renderCatalog(); setStatus(`Contenido creado: ${created.titulo}.`); } catch (e) { setStatus(`No se pudo crear el contenido: ${e.message}`); }
+        }
+
+        async function seedDemo() {
+            setStatus("Insertando catalogo demo...");
+            const created = [];
+            for (const item of demo) { try { created.push(await api.create(item)); } catch {} }
+            state.catalog = mergeCatalog(state.catalog, created);
+            setCache(state.catalog);
+            renderFilters(); renderCatalog();
+            setStatus(created.length ? `Se insertaron ${created.length} titulos demo.` : "No se insertaron titulos demo.");
+        }
+
+        function bind() {
+            $("search").addEventListener("input", (e) => { state.filters.search = e.target.value; $("search-mobile").value = e.target.value; renderCatalog(); });
+            $("search-mobile").addEventListener("input", (e) => { state.filters.search = e.target.value; $("search").value = e.target.value; renderCatalog(); });
+            $("genre-filter").addEventListener("change", (e) => { state.filters.genre = e.target.value; renderCatalog(); });
+            $("type-filter").addEventListener("change", (e) => { state.filters.type = e.target.value; renderCatalog(); });
+            $("year-filter").addEventListener("input", (e) => { state.filters.year = e.target.value; renderCatalog(); });
+            $("reset-filters").addEventListener("click", () => { state.filters = { search: "", genre: "", type: "", year: "" }; $("search").value = ""; $("search-mobile").value = ""; $("genre-filter").value = ""; $("type-filter").value = ""; $("year-filter").value = ""; renderCatalog(); });
+            $("refresh-catalog").addEventListener("click", refreshCatalog);
+            $("refresh-ranking").addEventListener("click", refreshRanking);
+            $("fetch-genre").addEventListener("click", fetchGenre);
+            $("load-session").addEventListener("click", loadSession);
+            $("seed-demo").addEventListener("click", seedDemo);
+            $("close-modal").addEventListener("click", closeModal);
+            $("create-form").addEventListener("submit", createContent);
+            $("catalog").addEventListener("click", async (e) => {
+                const button = e.target.closest("button"); if (!button) return;
+                const item = state.catalog.find((entry) => entry.id === button.dataset.id) || state.catalog.find((entry) => entry.titulo === button.dataset.title); if (!item) return;
+                if (button.dataset.action === "detail") openModal(item);
+                if (button.dataset.action === "play") { await registerView(item.id, item.titulo); await saveSession(item.id, item.titulo); }
+            });
+            $("modal-body").addEventListener("click", async (e) => {
+                const playId = e.target.getAttribute("data-modal-play"); const sessionId = e.target.getAttribute("data-modal-session");
+                if (playId !== null) { const item = state.catalog.find((entry) => entry.id === playId); await registerView(playId, item?.titulo); closeModal(); }
+                if (sessionId !== null) { const item = state.catalog.find((entry) => entry.id === sessionId); await saveSession(sessionId, item?.titulo); closeModal(); }
+            });
+            $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
+        }
+
+        async function init() {
+            $("user-id").value = localStorage.getItem(USER_KEY) || "demo-user";
+            state.catalog = mergeCatalog(getCache());
+            bind();
+            renderFilters(); renderCatalog(); renderRanking(); renderSession();
+            await refreshCatalog();
+            await refreshRanking();
+        }
+
+        init();
     </script>
 </body>
 </html>
