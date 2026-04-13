@@ -10,6 +10,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Utilidad JWT (Seguridad "Sin Estado" O Stateless).
+ * 
+ * PARADIGMA RELACIONAL vs STATELESS (JWT):
+ * - Mundo Clásico (SQL): Al iniciar sesión, el backend hace un 'INSERT' a una
+ *   tabla 'sesiones_activas', entregando un hash UUID al navegador. Por cada click
+ *   posterior del usuario, el Servidor hace una lectura costosisíma I/O a disco:
+ *   'SELECT * FROM sesiones_activas WHERE id = ...'
+ *   A escala masiva (>100K users), estas lecturas estrangulan completamente el hardware de BD.
+ * 
+ * - Mundo JWT: No usa base de datos.
+ *   Creamos un token JSON con la métrica necesaria ("ROLE_ADMIN") y lo ciframos ('signWith').
+ *   El usuario nos envía la clave en cada click; EL PROCESADOR CPU DE JAVA la decifra en 
+ *   nano-segundos con matemática pura. Hemos reducido la dependencia a la Base de Datos a Cero, 
+ *   volviendo a la Arquitectura escalable horizontalmente de inmediato.
+ */
 @Component
 public class JwtUtil {
 
