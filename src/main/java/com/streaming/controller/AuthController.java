@@ -32,7 +32,8 @@ public class AuthController {
             User registeredUser = userService.register(
                 user.getUsername(), 
                 user.getPassword(), 
-                user.getEmail()
+                user.getEmail(),
+                user.getCountry()
             );
             return ResponseEntity.ok(registeredUser);
         } catch (RuntimeException e) {
@@ -65,5 +66,15 @@ public class AuthController {
     public ResponseEntity<?> logout(@PathVariable String userId) {
         userService.logout(userId);
         return ResponseEntity.ok("Sesión cerrada");
+    }
+
+    /**
+     * Obtiene el perfil completo del usuario.
+     */
+    @GetMapping("/profile/{userId}")
+    public ResponseEntity<?> getProfile(@PathVariable String userId) {
+        return userService.getUserProfile(userId)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
     }
 }

@@ -34,7 +34,7 @@ public class UserService {
     /**
      * Registra un nuevo usuario con contraseña hasheada (BCrypt).
      */
-    public User register(String username, String password, String email) {
+    public User register(String username, String password, String email, String country) {
         if (userRepository.findByUsername(username).isPresent()) {
             throw new RuntimeException("El nombre de usuario ya existe");
         }
@@ -44,7 +44,7 @@ public class UserService {
 
         // Hasheamos la contraseña antes de guardar
         String encodedPassword = passwordEncoder.encode(password);
-        User newUser = new User(username, encodedPassword, email);
+        User newUser = new User(username, email, encodedPassword, country);
         
         return userRepository.save(newUser);
     }
@@ -62,9 +62,14 @@ public class UserService {
         if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
             User user = userOpt.get();
 
-            // 3. Crear sesión en Redis
+            // 3. Crear sesión en Redis (inicializar si no existe o renovar)
             Long timestamp = System.currentTimeMillis() / 1000;
-            UserSession session = new UserSession(user.getId(), null, timestamp);
+            
+            // Intentamos recuperar si ya había una sesión para mantener el lastContentId
+            Optional<UserSession> existingSession = userSessionRepository.findByUserId(user.getId());
+            String lastContentId = existingSession.map(UserSession::getLastContentId).orElse(null);
+            
+            UserSession session = new UserSession(user.getId(), lastContentId, timestamp);
             userSessionRepository.save(session);
 
             // 4. Generar Token JWT
@@ -74,6 +79,7 @@ public class UserService {
             Map<String, Object> response = new HashMap<>();
             response.put("user", user);
             response.put("token", token);
+            response.put("session", session);
 
             return Optional.of(response);
         }
@@ -86,5 +92,27 @@ public class UserService {
      */
     public void logout(String userId) {
         userSessionRepository.delete(userId);
+    }
+
+    /**
+     * Obtiene el perfil completo del usuario, incluyendo su sesión actual en Redis.
+     * 
+     * Este es un ejemplo de cómo coordinar datos de MongoDB y Redis.
+     */
+    public Optional<Map<String, Object>> getUserProfile(String userId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            Optional<UserSession> sessionOpt = userSessionRepository.findByUserId(userId);
+            
+            Map<String, Object> profile = new HashMap<>();
+            profile.put("user", user);
+            profile.put("session", sessionOpt.orElse(null));
+            
+            return Optional.of(profile);
+        }
+        
+        return Optional.empty();
     }
 }
