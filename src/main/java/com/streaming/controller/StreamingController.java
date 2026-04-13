@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -66,7 +67,7 @@ public class StreamingController {
             map.put("contenidoId", tuple.getValue());
             map.put("vistas", tuple.getScore());
             return map;
-        }).toList();
+        }).collect(Collectors.toList());
         return ResponseEntity.ok(resultado);
     }
 

@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # Base de Datos MongoDB para Usuarios y Contenidos
+  mongodb:
+    image: mongo:latest
+    container_name: streaming-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  # Base de Datos Redis para Sesiones y Ranking
+  redis:
+    image: redis:latest
+    container_name: streaming-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+
+volumes:
+  mongo-data:
