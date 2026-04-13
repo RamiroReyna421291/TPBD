@@ -108,6 +108,10 @@ public class StreamingService {
         return contenidoRepository.save(contenido);
     }
 
+    public List<Contenido> listarContenidos() {
+        return contenidoRepository.findAll();
+    }
+
     /**
      * Busca contenidos por género.
      * 
@@ -160,6 +164,11 @@ public class StreamingService {
         }
         // Si el contenido no existe, no hacemos nada (silencioso)
         // Podríamos lanzar una excepción en un caso real
+    }
+
+    public void eliminarContenido(String contenidoId) {
+        contenidoRepository.deleteById(contenidoId);
+        zSetOperations.remove(RANKING_KEY, contenidoId);
     }
 
     // =================================================================

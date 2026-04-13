@@ -26,6 +26,12 @@ public class StreamingController {
         return ResponseEntity.ok(saved);
     }
 
+    @GetMapping("/contenidos")
+    public ResponseEntity<List<Contenido>> listarContenidos() {
+        List<Contenido> contenidos = streamingService.listarContenidos();
+        return ResponseEntity.ok(contenidos);
+    }
+
     @GetMapping("/contenidos/genero/{genero}")
     public ResponseEntity<List<Contenido>> buscarPorGenero(@PathVariable String genero) {
         List<Contenido> resultados = streamingService.buscarPorGenero(genero);
@@ -38,6 +44,12 @@ public class StreamingController {
             @RequestParam String calidad) {
         streamingService.actualizarMetadatos(id, calidad);
         return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/contenidos/{id}")
+    public ResponseEntity<Void> eliminarContenido(@PathVariable String id) {
+        streamingService.eliminarContenido(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/vistas/{contenidoId}")

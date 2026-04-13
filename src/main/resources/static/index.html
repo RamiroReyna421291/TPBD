@@ -17,6 +17,7 @@
     <style>
         body { background: radial-gradient(circle at top, rgba(229,9,20,.18), transparent 24%), linear-gradient(180deg, #070b14 0%, #0a1020 50%, #070b14 100%); }
         .glass { background: rgba(15, 23, 42, .65); backdrop-filter: blur(14px); }
+        select option { background: #0f172a; color: #f8fafc; }
     </style>
 </head>
 <body class="min-h-screen text-white">
@@ -191,6 +192,7 @@
             fetchCatalog: async () => { try { const data = await request("/contenidos"); state.hasCatalogEndpoint = true; return data; } catch { state.hasCatalogEndpoint = false; return null; } },
             fetchGenre: (genre) => request(`/contenidos/genero/${encodeURIComponent(genre)}`),
             create: (body) => request("/contenidos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+            remove: (id) => request(`/contenidos/${encodeURIComponent(id)}`, { method: "DELETE" }),
             ranking: () => request("/ranking/top5"),
             view: (id) => request(`/vistas/${encodeURIComponent(id)}`, { method: "POST" }),
             saveSession: (userId, contentId) => request(`/sesion/${encodeURIComponent(userId)}?contenidoId=${encodeURIComponent(contentId)}`, { method: "POST" }),
@@ -266,7 +268,7 @@
         function openModal(item) {
             $("modal-kicker").textContent = `${item.tipo || "contenido"} • ${item.anioEstreno || "Año desconocido"}`;
             $("modal-title").textContent = item.titulo || "Sin titulo";
-            $("modal-body").innerHTML = `<div class="space-y-4"><div class="rounded-[1.25rem] bg-gradient-to-br ${cardGradient(0)} p-6"><p class="text-sm text-white/80">Dirigida por</p><p class="mt-2 text-2xl font-black">${item.director || "Director sin definir"}</p></div><div><p class="text-xs uppercase tracking-[.2em] text-mist">Generos</p><div class="mt-3 flex flex-wrap gap-2">${(item.generos || []).map((g) => `<span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm">${g}</span>`).join("") || "<span class='text-slate-400'>Sin generos</span>"}</div></div></div><div class="space-y-4"><div class="rounded-[1.25rem] border border-white/10 bg-white/5 p-5 text-sm"><p>Calidad: <span class="font-semibold text-white">${item.metadatos?.calidad || "No definida"}</span></p><p class="mt-2">Idiomas: <span class="font-semibold text-white">${(item.metadatos?.idiomas || []).join(", ") || "No definidos"}</span></p><p class="mt-2">Subtitulos: <span class="font-semibold text-white">${(item.metadatos?.subtitulos || []).join(", ") || "No definidos"}</span></p></div><div class="flex flex-wrap gap-3"><button data-modal-play="${item.id || ""}" class="rounded-full bg-ember px-4 py-3 text-sm font-semibold hover:bg-red-700">Registrar vista</button><button data-modal-session="${item.id || ""}" class="rounded-full border border-white/10 px-4 py-3 text-sm hover:bg-white/5">Guardar en sesion</button></div></div>`;
+            $("modal-body").innerHTML = `<div class="space-y-4"><div class="rounded-[1.25rem] bg-gradient-to-br ${cardGradient(0)} p-6"><p class="text-sm text-white/80">Dirigida por</p><p class="mt-2 text-2xl font-black">${item.director || "Director sin definir"}</p></div><div><p class="text-xs uppercase tracking-[.2em] text-mist">Generos</p><div class="mt-3 flex flex-wrap gap-2">${(item.generos || []).map((g) => `<span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm">${g}</span>`).join("") || "<span class='text-slate-400'>Sin generos</span>"}</div></div></div><div class="space-y-4"><div class="rounded-[1.25rem] border border-white/10 bg-white/5 p-5 text-sm"><p>Calidad: <span class="font-semibold text-white">${item.metadatos?.calidad || "No definida"}</span></p><p class="mt-2">Idiomas: <span class="font-semibold text-white">${(item.metadatos?.idiomas || []).join(", ") || "No definidos"}</span></p><p class="mt-2">Subtitulos: <span class="font-semibold text-white">${(item.metadatos?.subtitulos || []).join(", ") || "No definidos"}</span></p></div><div class="flex flex-wrap gap-3"><button data-modal-play="${item.id || ""}" class="rounded-full bg-ember px-4 py-3 text-sm font-semibold hover:bg-red-700">Registrar vista</button><button data-modal-session="${item.id || ""}" class="rounded-full border border-white/10 px-4 py-3 text-sm hover:bg-white/5">Guardar en sesion</button><button data-modal-delete="${item.id || ""}" data-modal-title="${item.titulo || "contenido"}" class="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200 hover:bg-red-500/20">Eliminar</button></div></div>`;
             $("modal").classList.remove("hidden");
             $("modal").classList.add("flex");
         }
@@ -289,6 +291,7 @@
         async function loadSession() { const userId = $("user-id").value.trim(); if (!userId) return setStatus("Ingresa un usuario."); try { state.session = await api.getSession(userId); localStorage.setItem(USER_KEY, userId); renderSession(); setStatus(`Sesion cargada para ${userId}.`); } catch { state.session = null; renderSession(); setStatus(`No existe sesion activa para ${userId}.`); } }
         async function registerView(id, title = "contenido") { if (!id) return setStatus(`"${title}" aun no tiene ID persistido.`); try { await api.view(id); await refreshRanking(); setStatus(`Vista registrada para ${title}.`); } catch (e) { setStatus(`No se pudo registrar la vista: ${e.message}`); } }
         async function saveSession(id, title = "contenido") { const userId = $("user-id").value.trim(); if (!userId) return setStatus("Ingresa un usuario."); if (!id) return setStatus(`"${title}" aun no tiene ID persistido.`); try { await api.saveSession(userId, id); state.session = { userId, lastContentId: id, timestamp: Math.floor(Date.now() / 1000) }; localStorage.setItem(USER_KEY, userId); renderSession(); setStatus(`Sesion guardada para ${userId}.`); } catch (e) { setStatus(`No se pudo guardar la sesion: ${e.message}`); } }
+        async function deleteContent(id, title = "contenido") { if (!id) return setStatus(`"${title}" aun no tiene ID persistido.`); if (!window.confirm(`Vas a eliminar "${title}" del catalogo. Deseas continuar?`)) return; try { await api.remove(id); state.catalog = state.catalog.filter((item) => item.id !== id); if (state.session?.lastContentId === id) state.session = null; setCache(state.catalog); renderFilters(); renderCatalog(); renderRanking(); renderSession(); closeModal(); setStatus(`Contenido eliminado: ${title}.`); } catch (e) { setStatus(`No se pudo eliminar el contenido: ${e.message}`); } }
 
         async function createContent(event) {
             event.preventDefault();
@@ -339,9 +342,10 @@
                 if (button.dataset.action === "play") { await registerView(item.id, item.titulo); await saveSession(item.id, item.titulo); }
             });
             $("modal-body").addEventListener("click", async (e) => {
-                const playId = e.target.getAttribute("data-modal-play"); const sessionId = e.target.getAttribute("data-modal-session");
+                const playId = e.target.getAttribute("data-modal-play"); const sessionId = e.target.getAttribute("data-modal-session"); const deleteId = e.target.getAttribute("data-modal-delete"); const deleteTitle = e.target.getAttribute("data-modal-title");
                 if (playId !== null) { const item = state.catalog.find((entry) => entry.id === playId); await registerView(playId, item?.titulo); closeModal(); }
                 if (sessionId !== null) { const item = state.catalog.find((entry) => entry.id === sessionId); await saveSession(sessionId, item?.titulo); closeModal(); }
+                if (deleteId !== null) await deleteContent(deleteId, deleteTitle || "contenido");
             });
             $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
         }
