@@ -80,9 +80,52 @@ volumes:
 
 **`redis:`**: Segundo servicio, idéntica estructura pero para Redis.
 
-**`command: redis-server --save 60 1 --loglevel warning`**: Sobreescribe el comando por defecto de la imagen Redis. Los parámetros significa:
+**`command: redis-server --save 60 1 --loglevel warning`**: Sobreescribe el comando por defecto de la imagen Redis.
+
+**Análisis del comando:**
 - `--save 60 1`: Crea un snapshot RDB cada 60 segundos si al menos 1 clave cambió
 - `--loglevel warning`: Reduce logs para mejorar rendimiento
+
+### 2.3.1 Redis y la Persistencia: ¿Redis no guarda información?
+
+Esta es una confusión común que vamos a aclarar:
+
+**Redis es PRIMARIAMENTE un almacén en memoria**, pero **PUEDE persistir datos** de forma opcional. Es como un auto de carrera: está diseñado para máxima velocidad (memoria RAM), pero tiene un baúl (persistencia) por si necesitás mudar algo.
+
+#### Los dos modos de persistencia en Redis:
+
+| Modo | Cómo funciona | Cuándo usarlo |
+|------|---------------|---------------|
+| **RDB (Snapshot)** | Cada X tiempo, guarda TODO en un archivo `dump.rdb` | Datos que pueden regenerarse |
+| **AOF (Append Only File)** | Guarda cada operación en un log | Datos críticos |
+
+#### En nuestro proyecto:
+
+```yaml
+command: redis-server --save 60 1 --loglevel warning
+```
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  EN NUESTRO PROYECTO                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ¿Qué guardamos en Redis?                                       │
+│  ├── Ranking de vistas (se regenera solo)                      │
+│  └── Sesiones de usuario (TTL de 1 hora)                        │
+│                                                                 │
+│  → Si Redis se cae y perdemos los datos:                      │
+│     ├── El ranking vuelve a 0 (no importa)                     │
+│     ├── Los usuarios deben loguearse de nuevo (tolerable)      │
+│                                                                 │
+│  → Por eso Redis NO necesita persistencia real en este caso    │
+│  → El "--save 60 1" es solo por si acaso, no crítico          │
+│                                                                 │
+│  CONCLUSIÓN: Redisstore TODO en RAM para velocidad sub-        │
+│  milisegundo. La persistencia (RDB) es opcional y nosotros     │
+│  NO la usamos porque los datos son efímeros por diseño.       │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 **`volumes: mongo-data`**: Declara el volumen al final para que persista entre recreaciones del compose.
 
@@ -178,6 +221,223 @@ spring:
 ```
 
 Esta configuración es **declarativa**: no necesitamos escribir código de conexión, Spring Boot autoconfigura los beans necesarios basándose en las dependencias presentes.
+
+### 3.4.1 ¿Qué es application.yml y qué hace?
+
+`application.yml` es el **archivo central de configuración** de Spring Boot. Acá definimos todas las configuraciones sin escribir código Java.
+
+```yaml
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: streaming_db
+    redis:
+      host: localhost
+      port: 6379
+```
+
+#### Análisis línea por línea:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  APPLICATION.YML                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  spring:                    # Configuración de Spring           │
+│    data:                   # Módulo Spring Data                  │
+│      mongodb:              # Config de MongoDB                  │
+│        host: localhost     # Dónde está la BD                  │
+│        port: 27017         # Puerto de MongoDB                  │
+│        database: streaming_db  # Nombre de la DB                │
+│      redis:                # Config de Redis                    │
+│        host: localhost     # Dónde está Redis                  │
+│        port: 6379          # Puerto de Redis                   │
+│                                                                 │
+│  TOTAL: 6 líneas de config = conexión lista a ambas BDs        │
+│  (Sin escribir una sola línea de código Java de conexión)      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### ¿Qué hace Spring con esta configuración?
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│            QUÉ GENERA SPRING CON ESTO                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Spring Boot hace "autoconfig":                                │
+│                                                                 │
+│  1. Ve que tenés spring-boot-starter-data-mongodb            │
+│     → Crea MongoClient, MongoTemplate, etc.                   │
+│                                                                 │
+│  2. Ve spring.data.mongodb.*                                  │
+│     → Configura la conexión:                                   │
+│        - Conecta a localhost:27017                             │
+│        - Usa la base "streaming_db"                           │
+│                                                                 │
+│  3. Lo mismo para Redis                                       │
+│        - Crea RedisConnectionFactory                           │
+│        - Crea RedisTemplate                                    │
+│        - Conecta a localhost:6379                              │
+│                                                                 │
+│  4. Vos solo usás @Autowired y listo                         │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ EJEMPLO DE USO                                         │   │
+│  │                                                         │   │
+│  │ @Autowired                                             │   │
+│  │ private MongoTemplate mongoTemplate;                  │   │
+│  │                                                         │   │
+│  │ // Spring ya lo-configuró, listo para usar            │   │
+│  │ mongoTemplate.insert(contenido);                      │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Comparación con otros frameworks:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│         ANTES vs DESPUÉS DE SPRING BOOT                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ANTES (Java EE tradicional):                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ // Vos tenías que escribir esto:                        │    │
+│  │ MongoClient client = new MongoClient("localhost", 27017);│    │
+│  │ MongoDatabase db = client.getDatabase("streaming_db");  │    │
+│  │ MongoCollection<Document> coll = db.getCollection(...);│    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+│  DESPUÉS (Spring Boot):                                        │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ // application.yml = 6 líneas                          │    │
+│  │ // Spring lo hace solo                                 │    │
+│  │ // Vos usás @Autowired MongoTemplate mt;                │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+│  AHORRO: ~30 líneas de código de configuración                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3.5 Los Beans en Spring Boot
+
+### ¿Qué es un Bean?
+
+Un **Bean** es un objeto que Spring Boot crea y gestiona automáticamente. Es el corazón de la **Inversión de Control (IoC)**.
+
+### Sin Spring (cómo lo harías vos manualmente):
+
+```java
+// Vos-tenés que crear y conectar todo manualmente
+public class Main {
+    public static void main(String[] args) {
+        // Crear el repository a mano
+        UserRepository userRepo = new UserRepository();
+        
+        // Crear el service y pasarle el repository
+        UserService userService = new UserService(userRepo);
+        
+        // Crear el controller y pasarle el service
+        UserController userController = new UserController(userService);
+        
+        // Vos administrás el ciclo de vida de cada objeto
+    }
+}
+```
+
+### Con Spring (Spring lo hace por vos):
+
+```java
+// Solo definís qué necesitás, Spring lo crea y conecta
+@Service
+public class UserService {
+    @Autowired  // Spring inyecta el bean automáticamente
+    private UserRepository userRepository;
+}
+
+// Spring ve @Service y crea el bean automáticamente
+// Cuando alguien necesite UserService, Spring se lo da
+```
+
+### ¿Cómo sabe Spring qué crear?
+
+Las **anotaciones** le dicen a Spring qué role tiene cada clase:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    ANOTACIONES DE BEANS                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  @Component    → "Soy un componente genérico"                  │
+│      ↓                                                         │
+│  @Repository   → "Soy un repository (acceso a datos)"          │
+│      ↓                                                         │
+│  @Service      → "Soy un servicio (lógica de negocio)"         │
+│      ↓                                                         │
+│  @Controller   → "Soy un controlador web"                      │
+│      ↓                                                         │
+│  @Configuration → "Tengo configuración"                         │
+│                                                                 │
+│  Todas dicen: "CREÁME COMO BEAN"                              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### En nuestro proyecto:
+
+```java
+// Este es un BEAN de tipo SERVICE
+@Service
+public class StreamingService {
+    // Este es un BEAN de tipo REPOSITORY (creado por Spring Data)
+    @Autowired
+    private ContenidoRepository contenidoRepository;
+    
+    // Este es un BEAN de tipo REDIS TEMPLATE ( autoconfigurado)
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+}
+```
+
+**Flujo de creación:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              CREACIÓN DE BEANS EN SPRING                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. Tu código tiene @Autowired                                  │
+│     → Spring ve que necesitás un StreamingService             │
+│                                                                 │
+│  2. Busca una clase con @Service que coincida                 │
+│     → Encontró StreamingService                                 │
+│                                                                 │
+│  3. Crea UNA SOLA instancia (Singleton por defecto)           │
+│     → La guarda en su "contenedor de beans"                    │
+│                                                                 │
+│  4. Cuando la necesités, Spring te la inyecta                  │
+│     → Vos no llamás "new StreamingService()"                  │
+│     → Vos solo declarás la dependencia y Spring te la da       │
+│                                                                 │
+│  BENEFICIO: Desacoplamiento total                              │
+│  → El código no sabe quién crea los objetos                    │
+│  → Fácil de tester (podes usar beans falsos/mocks)            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Resumen de beans en nuestro proyecto:
+
+| Bean | Tipo | Para qué |
+|------|------|----------|
+| `StreamingService` | @Service | Lógica de negocio |
+| `ContenidoRepository` | @Repository | Acceso a MongoDB (creado por Spring Data) |
+| `UserRepository` | @Repository | Acceso a MongoDB |
+| `RedisTemplate<String, String>` | @Autowired | Operaciones con Redis |
+| `StreamingController` | @Controller | Manejo de requests HTTP |
 
 ---
 
