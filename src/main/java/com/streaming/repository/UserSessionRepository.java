@@ -106,9 +106,9 @@ public class UserSessionRepository {
         redisTemplate.opsForHash().putAll(key, hashMap);
 
         // 4. Establecer tiempo de expiración (TTL)
-        // Después de DEFAULT_TTL_SECONDS segundos, Redis elimina la key automáticamente
-        // Esto es CRUCIAL para sesiones: no querés sesiones obsoletas ocupando memoria
-        redisTemplate.expire(key, DEFAULT_TTL_SECONDS, TimeUnit.SECONDS);
+        // Usamos el TTL de la sesion, o el por defecto
+        long ttl = session.getTimeToLive() != null ? session.getTimeToLive() : DEFAULT_TTL_SECONDS;
+        redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
     }
 
     /**
@@ -213,8 +213,9 @@ public class UserSessionRepository {
      * 
      * @param userId el ID del usuario
      */
-    public void renewTTL(String userId) {
+    public void renewTTL(String userId, Long ttlSeconds) {
         String key = KEY_PREFIX + userId;
-        redisTemplate.expire(key, DEFAULT_TTL_SECONDS, TimeUnit.SECONDS);
+        long ttl = ttlSeconds != null ? ttlSeconds : DEFAULT_TTL_SECONDS;
+        redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
     }
 }

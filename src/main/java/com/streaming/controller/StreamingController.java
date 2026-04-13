@@ -71,6 +71,26 @@ public class StreamingController {
         return ResponseEntity.ok(resultado);
     }
 
+    @GetMapping("/ranking/top5/hoy")
+    public ResponseEntity<List<Map<String, Object>>> getTop5VistasDia() {
+        Set<ZSetOperations.TypedTuple<String>> top5 = streamingService.getTop5VistasDia();
+        // previene null pointer si el ranking de hoy esta vacio
+        if(top5 == null) return ResponseEntity.ok(List.of());
+        
+        List<Map<String, Object>> resultado = top5.stream().map(tuple -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("contenidoId", tuple.getValue());
+            map.put("vistas", tuple.getScore());
+            return map;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(resultado);
+    }
+
+    @GetMapping("/vistas/historial/{userId}")
+    public ResponseEntity<List<String>> obtenerHistorial(@PathVariable String userId) {
+        return ResponseEntity.ok(streamingService.obtenerHistorial(userId));
+    }
+
     @PostMapping("/sesion/{userId}")
     public ResponseEntity<Void> guardarSesion(
             @PathVariable String userId,
@@ -84,5 +104,11 @@ public class StreamingController {
         return streamingService.obtenerSesion(userId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/sesion/{userId}/test-ttl")
+    public ResponseEntity<Void> testSessionTtl(@PathVariable String userId) {
+        streamingService.setearTtlCortoPrueba(userId);
+        return ResponseEntity.ok().build();
     }
 }

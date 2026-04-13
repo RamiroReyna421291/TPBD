@@ -3,18 +3,12 @@ package com.streaming.controller;
 import com.streaming.model.User;
 import com.streaming.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
 
-/**
- * Controlador de Autenticación.
- * 
- * En C#, esto sería un [ApiController] con [Route("api/auth")].
- * En Spring Boot usamos @RestController y @RequestMapping.
- */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -22,59 +16,33 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    /**
-     * Registro de usuario.
-     * Espera un JSON con username, password, email.
-     */
+    public static class LoginRequest {
+        private String username;
+        private String password;
+        
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
+    }
+
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
+    public ResponseEntity<?> register(@RequestBody User user, @RequestParam(defaultValue = "false") boolean admin) {
         try {
-            User registeredUser = userService.register(
-                user.getUsername(), 
-                user.getPassword(), 
-                user.getEmail(),
-                user.getCountry()
-            );
-            return ResponseEntity.ok(registeredUser);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            Map<String, Object> authData = userService.register(user, admin);
+            return ResponseEntity.ok(authData);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
 
-    /**
-     * Login de usuario.
-     * Retorna el objeto Usuario y el Token JWT si el login es exitoso.
-     */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
-        String username = credentials.get("username");
-        String password = credentials.get("password");
-
-        Optional<Map<String, Object>> loginResponse = userService.login(username, password);
-
-        if (loginResponse.isPresent()) {
-            return ResponseEntity.ok(loginResponse.get());
-        } else {
-            return ResponseEntity.status(401).body("Credenciales inválidas");
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        try {
+            Map<String, Object> authData = userService.login(loginRequest.username, loginRequest.password);
+            return ResponseEntity.ok(authData);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
         }
-    }
-
-    /**
-     * Logout.
-     */
-    @PostMapping("/logout/{userId}")
-    public ResponseEntity<?> logout(@PathVariable String userId) {
-        userService.logout(userId);
-        return ResponseEntity.ok("Sesión cerrada");
-    }
-
-    /**
-     * Obtiene el perfil completo del usuario.
-     */
-    @GetMapping("/profile/{userId}")
-    public ResponseEntity<?> getProfile(@PathVariable String userId) {
-        return userService.getUserProfile(userId)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
     }
 }

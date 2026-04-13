@@ -17,6 +17,7 @@ public class User {
     
     private String password;
     private String country;
+    private String rol = "ROLE_USER";
 
     public User() {
     }
@@ -72,5 +73,13 @@ public class User {
 
     public void setCountry(String country) {
         this.country = country;
+    }
+
+    public String getRol() {
+        return rol;
+    }
+
+    public void setRol(String rol) {
+        this.rol = rol;
     }
 }

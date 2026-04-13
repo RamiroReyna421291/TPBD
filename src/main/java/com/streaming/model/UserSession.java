@@ -3,6 +3,7 @@ package com.streaming.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.index.Indexed;
+import org.springframework.data.redis.core.TimeToLive;
 
 @RedisHash("user:session")
 public class UserSession {
@@ -24,8 +25,12 @@ public class UserSession {
         this.timestamp = timestamp;
     }
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    @TimeToLive
+    private Long timeToLive;
+
+    public Long getTimeToLive() { return timeToLive; }
+    public void setTimeToLive(Long timeToLive) { this.timeToLive = timeToLive; }
+
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
     public String getLastContentId() { return lastContentId; }

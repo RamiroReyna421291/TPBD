@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StreamFlix</title>
+    <title>Cuevana prompt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { ember: "#e50914", ink: "#070b14", mist: "#94a3b8" }
+                    colors: { ember: "#0ea5e9", ink: "#020617", mist: "#94a3b8" }
                 }
             }
         };
     </script>
     <style>
-        body { background: radial-gradient(circle at top, rgba(229,9,20,.18), transparent 24%), linear-gradient(180deg, #070b14 0%, #0a1020 50%, #070b14 100%); }
+        body { background: radial-gradient(circle at top, rgba(14,165,233,.1), transparent 24%), linear-gradient(180deg, #020617 0%, #0f172a 50%, #020617 100%); }
         .glass { background: rgba(15, 23, 42, .65); backdrop-filter: blur(14px); }
         select option { background: #0f172a; color: #f8fafc; }
     </style>
@@ -24,10 +24,9 @@
     <header class="sticky top-0 z-40 border-b border-white/10 bg-ink/80 backdrop-blur">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
             <div class="flex items-center gap-3">
-                <div class="rounded bg-ember px-3 py-1 text-lg font-black tracking-[.3em]">SF</div>
+                <div class="rounded bg-ember px-3 py-1 text-lg font-black tracking-[.3em]">CP</div>
                 <div>
-                    <p class="text-xs uppercase tracking-[.3em] text-mist">Streaming App</p>
-                    <h1 class="text-lg font-semibold">StreamFlix</h1>
+                    <h1 class="text-xl font-bold tracking-wider text-white">Cuevana <span class="text-ember text-sm">prompt</span></h1>
                 </div>
             </div>
             <label class="glass hidden w-full max-w-xl items-center gap-3 rounded-full border border-white/10 px-4 py-3 md:flex">
@@ -38,35 +37,32 @@
     </header>
 
     <main class="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
-        <section class="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(229,9,20,.3),rgba(255,255,255,.03))]">
-            <div class="grid gap-6 px-6 py-10 lg:grid-cols-[1.35fr,.85fr] lg:px-10">
-                <div>
-                    <p class="inline-flex rounded-full border border-ember/30 bg-ember/15 px-3 py-1 text-xs uppercase tracking-[.25em] text-rose-100">Catalogo listo para crecer</p>
-                    <h2 class="mt-4 max-w-3xl text-4xl font-black leading-none sm:text-5xl">Frontend estilo streaming con fallback para los endpoints actuales.</h2>
-                    <p class="mt-5 max-w-2xl text-sm leading-7 text-slate-200 sm:text-base">
-                        El catálogo queda preparado para usar <code class="rounded bg-white/10 px-1">GET /api/contenidos</code> cuando exista.
-                        Mientras tanto trabaja con cache local, alta de contenidos y consultas por género.
+        <section class="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(15,23,42,.8),rgba(2,6,23,1))]">
+            <img src="https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay" alt="" />
+            <div class="relative grid gap-6 px-6 py-10 lg:grid-cols-[1.35fr,.85fr] lg:px-10 z-10">
+                <div class="flex flex-col justify-center">
+                    <p class="inline-flex max-w-max rounded-full border border-ember/30 bg-ember/10 px-3 py-1 text-xs uppercase tracking-[.25em] text-sky-200">Bienvenido</p>
+                    <h2 class="mt-4 max-w-3xl text-4xl font-black leading-none sm:text-5xl">Todas las películas y series en un solo lugar.</h2>
+                    <p class="mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+                        Disfrutá de tu contenido favorito en excelente calidad. Iniciá sesión para guardar tu progreso, o utilizá el panel de testeo si sos administrador.
                     </p>
                     <div class="mt-6 flex flex-wrap gap-3">
-                        <button id="refresh-catalog" class="rounded-full bg-ember px-5 py-3 text-sm font-semibold hover:bg-red-700">Actualizar catalogo</button>
-                        <button id="load-session" class="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold hover:bg-white/5">Ver mi sesion</button>
+                        <button id="refresh-catalog" class="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold hover:bg-white/5 bg-black/40 backdrop-blur">Explorar catálogo</button>
+                        <button id="load-session" class="rounded-full bg-ember px-5 py-3 text-sm font-semibold hover:bg-sky-500 text-white">Mi Sesión Virtual</button>
                     </div>
                 </div>
-                <div class="glass rounded-[1.5rem] border border-white/10 p-5">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-sm uppercase tracking-[.25em] text-mist">Estado</h3>
-                        <span id="mode-badge" class="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-200">Modo fallback</span>
+                <div class="glass rounded-[1.5rem] border border-white/10 p-5 backdrop-blur-md bg-black/40">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm uppercase tracking-[.25em] text-mist">Panel de Cuenta</h3>
+                        <span id="mode-badge" class="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-[10px] text-emerald-200" title="API Status">Live API</span>
                     </div>
-                    <div class="mt-4 space-y-4 text-sm text-slate-200">
-                        <div class="rounded-2xl border border-white/10 bg-black/20 p-4">
-                            <p class="text-xs uppercase tracking-[.2em] text-mist">Fuente</p>
-                            <p id="catalog-source" class="mt-2 text-base font-semibold text-white">Cache local y backend por genero</p>
+                    <div class="space-y-3 text-sm text-slate-200">
+                        <div class="rounded-2xl border border-white/10 bg-black/40 p-4" id="auth-panel">
+                            <!-- Auth Panel injected by ui.js -->
                         </div>
-                        <div class="rounded-2xl border border-white/10 bg-black/20 p-4">
-                            <p class="text-xs uppercase tracking-[.2em] text-mist">Usuario</p>
-                            <input id="user-id" value="demo-user" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 outline-none">
-                        </div>
-                        <p id="status" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">Listo para trabajar con los endpoints actuales.</p>
+                        <div id="history-panel" class="hidden rounded-2xl border border-white/10 bg-black/40 p-4"></div>
+                        <p id="status" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-mist text-center">Todo operativo.</p>
+                        <div class="hidden" id="catalog-source"></div>
                     </div>
                 </div>
             </div>
@@ -97,10 +93,15 @@
                 <section class="glass rounded-[1.5rem] border border-white/10 p-5">
                     <div class="mb-4 flex items-center justify-between">
                         <div>
-                            <p class="text-xs uppercase tracking-[.25em] text-mist">Top 5</p>
-                            <h3 class="text-2xl font-bold">Tendencias</h3>
+                            <p class="text-xs uppercase tracking-[.25em] text-mist">Trending</p>
+                            <h3 class="text-2xl font-bold">Top 5 de Hoy</h3>
                         </div>
-                        <button id="refresh-ranking" class="rounded-full border border-white/15 px-4 py-2 text-sm hover:bg-white/5">Actualizar</button>
+                        <button id="refresh-ranking" class="rounded-full border border-white/15 px-4 py-2 text-sm hover:bg-white/5">Actualizar Rankings</button>
+                    </div>
+                    <div id="ranking-today" class="grid gap-4 md:grid-cols-2 xl:grid-cols-5 mb-8"></div>
+                    <div class="mb-4">
+                        <p class="text-xs uppercase tracking-[.25em] text-mist">All Time</p>
+                        <h3 class="text-2xl font-bold">Top Histórico</h3>
                     </div>
                     <div id="ranking" class="grid gap-4 md:grid-cols-2 xl:grid-cols-5"></div>
                 </section>
@@ -124,8 +125,8 @@
                         </div>
                     </div>
 
-                    <div class="glass rounded-[1.5rem] border border-white/10 p-5">
-                        <p class="text-xs uppercase tracking-[.25em] text-mist">Alta rapida</p>
+                    <div id="admin-panel" class="glass rounded-[1.5rem] border border-white/10 p-5" style="display: none;">
+                        <p class="text-xs uppercase tracking-[.25em] text-mist">Panel de Administración</p>
                         <h3 class="mt-2 text-2xl font-bold">Agregar contenido</h3>
                         <form id="create-form" class="mt-5 space-y-4">
                             <div class="grid gap-4 md:grid-cols-2">
@@ -143,7 +144,7 @@
                                 <input name="idiomas" placeholder="Idiomas separados por coma" class="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none">
                                 <input name="subtitulos" placeholder="Subtitulos separados por coma" class="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none">
                             </div>
-                            <button class="w-full rounded-2xl bg-ember px-4 py-3 font-semibold hover:bg-red-700">Publicar contenido</button>
+                            <button class="w-full rounded-2xl bg-ember px-4 py-3 font-semibold hover:bg-red-700">Publicar contenido al catálogo</button>
                         </form>
                     </div>
                 </section>

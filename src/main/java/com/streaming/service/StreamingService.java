@@ -214,6 +214,13 @@ public class StreamingService {
          * Return: el nuevo score del elemento
          */
         zSetOperations.incrementScore(RANKING_KEY, contenidoId, 1);
+
+        // --- NUEVO: Tendencias de Hoy ---
+        String hoy = java.time.LocalDate.now().toString();
+        String dailyKey = "ranking:vistas:dia:" + hoy;
+        zSetOperations.incrementScore(dailyKey, contenidoId, 1);
+        // Expirar la key de hoy en 48 horas para no llenar la RAM infinitamente
+        redisTemplate.expire(dailyKey, 48, java.util.concurrent.TimeUnit.HOURS);
     }
 
     /**
@@ -247,6 +254,14 @@ public class StreamingService {
          * Si quieres solo los IDs sin scores, usa reverseRange(key, 0, 4)
          */
         return zSetOperations.reverseRangeWithScores(RANKING_KEY, 0, 4);
+    }
+
+    /**
+     * Obtiene los 5 contenidos más vistos en el día actual.
+     */
+    public Set<ZSetOperations.TypedTuple<String>> getTop5VistasDia() {
+        String hoy = java.time.LocalDate.now().toString();
+        return zSetOperations.reverseRangeWithScores("ranking:vistas:dia:" + hoy, 0, 4);
     }
 
     // =================================================================
@@ -291,6 +306,7 @@ public class StreamingService {
          */
         Long timestamp = System.currentTimeMillis() / 1000;
         UserSession session = new UserSession(userId, contenidoId, timestamp);
+        session.setTimeToLive(3600L); // 1 hora
         
         /**
          * Delegar al repository que maneja la complejidad de:
@@ -299,6 +315,20 @@ public class StreamingService {
          * - Establecer el TTL
          */
         userSessionRepository.save(session);
+
+        // --- NUEVO: Historial de Vistos Recientemente ---
+        String historyKey = "user:history:" + userId;
+        // inserta al inicio de la lista
+        redisTemplate.opsForList().leftPush(historyKey, contenidoId);
+        // recorta la lista para mantener un máximo de 5 elementos (índices 0 a 4)
+        redisTemplate.opsForList().trim(historyKey, 0, 4);
+    }
+
+    /**
+     * Devuelve los últimos contenidos vistos por el usuario.
+     */
+    public List<String> obtenerHistorial(String userId) {
+        return redisTemplate.opsForList().range("user:history:" + userId, 0, -1);
     }
 
     /**
@@ -324,5 +354,12 @@ public class StreamingService {
          * 4. Convertir los campos de vuelta a un objeto UserSession
          */
         return userSessionRepository.findByUserId(userId);
+    }
+
+    public void setearTtlCortoPrueba(String userId) {
+        userSessionRepository.findByUserId(userId).ifPresent(session -> {
+            session.setTimeToLive(5L); // 5 segundos
+            userSessionRepository.save(session);
+        });
     }
 }
